@@ -7,12 +7,16 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import java.io.File;
@@ -21,6 +25,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.Random;
 
+import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
@@ -31,11 +36,18 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_STORAGE_READ = 2;
     private static final int REQUEST_STORAGE_WRITE = 3;
 
+    @BindView(R.id.output_image) ImageView image;
+    @BindView(R.id.output_waiting) ProgressBar waitingBuffer;
+
     private Bitmap originalImage;
 
     private boolean validate() {
         if(originalImage == null) {
             Toast.makeText(MainActivity.this, "Pick an image first!", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        if(image.getVisibility() == View.GONE) {
+            Toast.makeText(MainActivity.this, "A filter is currently in process...", Toast.LENGTH_SHORT).show();
             return false;
         }
         return true;
@@ -56,16 +68,44 @@ public class MainActivity extends AppCompatActivity {
         filterImage(new FilterRifqi());
     }
 
-    private void filterImage(Filter filter) {
+    private void filterImage(final Filter filter) {
         if(!validate()) {
             return;
         }
-        Bitmap filterResult = filter.filter(originalImage);
-        ((ImageView) findViewById(R.id.output_image)).setImageBitmap(filterResult);
+        waitingBuffer.setVisibility(View.VISIBLE);
+        image.setVisibility(View.GONE);
+        Thread executeFilter = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Bitmap filterResult = filter.filter(originalImage);
+                image.setImageBitmap(filterResult);
+
+                waitingBuffer.setVisibility(View.GONE);
+                image.setVisibility(View.VISIBLE);
+            }
+        });
+        executeFilter.run();
+        /**
+         * [MOTI] TODO:
+         * Modify above code so it won't stuck main thread.
+         * The Thread appears to run in the main process :/
+         */
+    }
+
+    @OnClick(R.id.trigger_clear)
+    public void clearFilter() {
+        if(!validate()) {
+            return;
+        }
+        image.setImageBitmap(originalImage);
     }
 
     @OnClick(R.id.trigger_upload)
     public void uploadImage() {
+        if(image.getVisibility() == View.GONE) {
+            Toast.makeText(MainActivity.this, "A filter is currently in process...", Toast.LENGTH_SHORT).show();
+            return;
+        }
         /**
          * check for read storage permission, ask permission if needed.
          * Proceed to accessing gallery otherwise
@@ -90,7 +130,8 @@ public class MainActivity extends AppCompatActivity {
                     Uri imageUri = data.getData();
                     InputStream imageStream = getContentResolver().openInputStream(imageUri);
                     originalImage = BitmapFactory.decodeStream(imageStream);
-                    ((ImageView) findViewById(R.id.output_image)).setImageBitmap(originalImage);
+                    Log.d(TAG, "width: " + originalImage.getWidth() + ", height: " + originalImage.getHeight());
+                    image.setImageBitmap(originalImage);
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                     Toast.makeText(MainActivity.this, "Fail to retrieve image data", Toast.LENGTH_LONG).show();
@@ -147,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
          * Still not working well, for some reason :/
          * Will fix this later as this feature is optional
          */
-        Bitmap imageBMP = ((BitmapDrawable) ((ImageView) findViewById(R.id.output_image)).getDrawable()).getBitmap();
+        Bitmap imageBMP = ((BitmapDrawable) image.getDrawable()).getBitmap();
         File myDir = new File(Environment.getExternalStorageDirectory().toString());
         myDir.mkdirs();
         File file;
