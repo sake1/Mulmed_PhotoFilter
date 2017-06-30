@@ -54,8 +54,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.trigger_filter1)
-    public void filter1() {
-        filterImage(new FilterFebri());
+    public void filter1() { filterImage(new FilterFebri());
     }
 
     @OnClick(R.id.trigger_filter2)
