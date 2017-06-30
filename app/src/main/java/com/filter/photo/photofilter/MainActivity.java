@@ -22,7 +22,10 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Random;
 
 import butterknife.BindView;
@@ -40,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.output_waiting) ProgressBar waitingBuffer;
 
     private Bitmap originalImage;
+    private Bitmap tempFilteredImage;
 
     private boolean validate() {
         if(originalImage == null) {
@@ -68,27 +72,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void filterImage(final Filter filter) {
+        final Bitmap[] filterResult = {null};
         if(!validate()) {
             return;
         }
         waitingBuffer.setVisibility(View.VISIBLE);
         image.setVisibility(View.GONE);
-        Thread executeFilter = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Bitmap filterResult = filter.filter(originalImage);
-                image.setImageBitmap(filterResult);
-
+        new AsyncTask<Void, Void, Boolean>() {
+            protected Boolean doInBackground(Void... params) {
+                filterResult[0] = filter.filter(originalImage);
+                return null;
+            }
+            protected void onPostExecute(Boolean result) {
+                image.setImageBitmap(filterResult[0]);
                 waitingBuffer.setVisibility(View.GONE);
                 image.setVisibility(View.VISIBLE);
             }
-        });
-        executeFilter.run();
-        /**
-         * [MOTI] TODO:
-         * Modify above code so it won't stuck main thread.
-         * The Thread appears to run in the main process :/
-         */
+        }.execute();
+    }
+
+    private void setTempImageNotify(Bitmap image) {
+        tempFilteredImage = image;
     }
 
     @OnClick(R.id.trigger_clear)
@@ -139,16 +143,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void pickImageFromGallery() {
-        /**
-         * startActivityForResult method will trigger onActivityResult method
-         * after the user finished picking the picture from gallery
-         * The Image data from gallery will then be handled by onActivityResult method
-         */
-        Intent galleryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        startActivityForResult(galleryIntent, PICK_PICTURE);
-    }
-
     @OnClick(R.id.trigger_save)
     public void saveImage() {
         if(!validate()) {
@@ -181,15 +175,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void saveImageToGallery() {
+    private void pickImageFromGallery() {
         /**
-         * [MOTI] TODO:
-         * Still not working well, for some reason :/
-         * Will fix this later as this feature is optional
+         * startActivityForResult method will trigger onActivityResult method
+         * after the user finished picking the picture from gallery
+         * The Image data from gallery will then be handled by onActivityResult method
          */
+        Intent galleryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(galleryIntent, PICK_PICTURE);
+    }
+
+    private void saveImageToGallery() {
         Bitmap imageBMP = ((BitmapDrawable) image.getDrawable()).getBitmap();
-        File myDir = new File(Environment.getExternalStorageDirectory().toString());
-        myDir.mkdirs();
+        File myDir = new File(Environment.getExternalStorageDirectory().toString() + "/Pictures/FilteredImage");
+        if (!myDir.exists()){
+            myDir.mkdirs();
+        }
         File file;
         do {
             Random generator = new Random();
@@ -200,6 +201,7 @@ public class MainActivity extends AppCompatActivity {
             imageBMP.compress(Bitmap.CompressFormat.JPEG, 90, out);
             out.flush();
             out.close();
+            Toast.makeText(MainActivity.this, "Image saved sucessfully", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             e.printStackTrace();
         }
