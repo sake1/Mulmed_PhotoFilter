@@ -64,7 +64,12 @@ public class MainActivity extends AppCompatActivity {
     public void filter1() {
         if(lastUsedFilter != R.id.trigger_filter1 && validate()) {
             lastUsedFilter = R.id.trigger_filter2;
-            filterImage(new FilterFebri());
+
+            Bitmap ID =  (Bitmap) BitmapFactory.decodeResource(getResources(),R.drawable.id);
+            Bitmap CH =  (Bitmap) BitmapFactory.decodeResource(getResources(),R.drawable.ch);
+            Bitmap DE =  (Bitmap) BitmapFactory.decodeResource(getResources(),R.drawable.de);
+
+            filterImage(new FilterFebri(image,DE));
         } else {
             image.setImageBitmap(tempFilteredImage);
         }

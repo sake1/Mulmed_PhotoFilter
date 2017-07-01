@@ -1,12 +1,13 @@
 package com.filter.photo.photofilter;
 
-import android.content.Context;
-import android.content.res.Resources;
+
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
+import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.widget.ImageView;
+
 
 /**
  * Created by sake on 23/06/17.
@@ -14,38 +15,54 @@ import android.graphics.drawable.LayerDrawable;
 
 public class FilterFebri extends Filter{
 
+    private ImageView image;
+    private Bitmap layer;
+
+    public FilterFebri(ImageView image, Bitmap layer) {
+        this.image = image;
+        this.layer = layer;
+    }
+
     @Override
     public Bitmap filter(Bitmap origin) {
         int bitOffset = 64;
+
         // get image size
         int width = origin.getWidth();
         int height = origin.getHeight();
-        // create output bitmap
-        Bitmap bmOut = Bitmap.createBitmap(width, height, origin.getConfig());
+        Bitmap bmOut =  Bitmap.createBitmap(width, height, origin.getConfig());
 
         // layers
-        BitmapDrawable[] layers = new BitmapDrawable[2];
-        layers[0] = new BitmapDrawable(origin);
-        layers[1] = (BitmapDrawable) Resources.getSystem().getDrawable(R.mipmap.id);
-        LayerDrawable layerdrawable = new LayerDrawable(layers);
-
-        // scan through all pixels
+        Bitmap flaglayer = Bitmap.createScaledBitmap(layer, width, height, true);
+        flaglayer.setHeight(height);
+        flaglayer.setWidth(width);
+        // make greyscale
         for(int x = 0; x < width; ++x) {
             for(int y = 0; y < height; ++y) {
                 // get pixel color
                 int pixel = origin.getPixel(x, y);
                 int alpha = Color.alpha(pixel);
-                int r = 255 - Color.red(pixel);
-                int g = 255 - Color.green(pixel);
-                int b = 255 - Color.blue(pixel);
+                int r = Color.red(pixel);
+                int g = Color.green(pixel);
+                int b = Color.blue(pixel);
 
-                int[] filteredRGB = {r,g,b};
+                int grey = (r+g+b)/3;
 
-                bmOut.setPixel(x, y, Color.argb(alpha, filteredRGB[0], filteredRGB[1], filteredRGB[2]));
+                bmOut.setPixel(x, y, Color.argb(alpha, grey, grey, grey));
             }
         }
 
-        return bmOut;
+        return setFlagFilter(bmOut, flaglayer);
+    }
+
+    public static Bitmap setFlagFilter(Bitmap bmp1, Bitmap bmp2) {
+        Bitmap bmFilter = Bitmap.createBitmap(bmp1.getWidth(), bmp1.getHeight(), bmp1.getConfig());
+        Paint paint = new Paint();
+        paint.setAlpha(200);
+        Canvas canvas = new Canvas(bmFilter);
+        canvas.drawBitmap(bmp1, new Matrix(), null);
+        canvas.drawBitmap(bmp2, 0, 0, paint);
+        return bmFilter;
     }
 
 }
