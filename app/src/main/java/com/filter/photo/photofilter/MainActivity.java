@@ -62,24 +62,41 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.trigger_filter1)
     public void filter1() {
-        if(lastUsedFilter != R.id.trigger_filter1 && validate()) {
-            lastUsedFilter = R.id.trigger_filter2;
-
-            Bitmap ID =  (Bitmap) BitmapFactory.decodeResource(getResources(),R.drawable.id);
-            Bitmap CH =  (Bitmap) BitmapFactory.decodeResource(getResources(),R.drawable.ch);
-            Bitmap DE =  (Bitmap) BitmapFactory.decodeResource(getResources(),R.drawable.de);
-
-            filterImage(new FilterFebri(image,DE));
-        } else {
-            image.setImageBitmap(tempFilteredImage);
+        if(!validate()) {
+            return;
         }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Flag");
+        builder.setItems(new CharSequence[] {"Indonesia", "Swiss", "German"}, new DialogInterface.OnClickListener() {
+
+            private static final int INDONESIA = 0;
+            private static final int SWISS = 1;
+            private static final int GERMAN = 2;
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Bitmap flag;
+                if(which == INDONESIA) {
+                    flag = BitmapFactory.decodeResource(getResources(),R.drawable.id);
+                } else if(which == SWISS) {
+                    flag = BitmapFactory.decodeResource(getResources(),R.drawable.ch);
+                } else {
+                    flag = BitmapFactory.decodeResource(getResources(),R.drawable.de);
+                }
+
+                filterImage(new FilterFebri(image, flag));
+                lastUsedFilter = R.id.trigger_filter1;
+            }
+        });
+        builder.show();
     }
 
     @OnClick(R.id.trigger_filter2)
     public void filter2() {
         if(lastUsedFilter != R.id.trigger_filter2 && validate()) {
-            lastUsedFilter = R.id.trigger_filter2;
             filterImage(new FilterMoti(FilterMoti.CIRCLE_SHADOW_FRAME_FILTER));
+            lastUsedFilter = R.id.trigger_filter2;
         } else {
             image.setImageBitmap(tempFilteredImage);
         }
@@ -88,8 +105,8 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.trigger_filter3)
     public void filter3() {
         if(lastUsedFilter != R.id.trigger_filter3 && validate()) {
-            lastUsedFilter = R.id.trigger_filter3;
             filterImage(new FilterRifqi());
+            lastUsedFilter = R.id.trigger_filter3;
         } else {
             image.setImageBitmap(tempFilteredImage);
         }
@@ -100,19 +117,15 @@ public class MainActivity extends AppCompatActivity {
         if(!validate()) {
             return;
         }
-        lastUsedFilter = R.id.trigger_filter4;
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Select Color");
         builder.setItems(new CharSequence[] {"Red", "Green", "Blue"}, new DialogInterface.OnClickListener() {
 
-            private static final int RED = 0;
-            private static final int GREEN = 1;
-            private static final int BLUE = 2;
-
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 filterImage(new FilterMoti(which));
+                lastUsedFilter = R.id.trigger_filter4;
             }
         });
         builder.show();
