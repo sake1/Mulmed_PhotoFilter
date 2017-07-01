@@ -48,7 +48,7 @@ public class FilterFebri extends Filter{
 
                 int grey = (r+g+b)/3;
 
-                bmOut.setPixel(x, y, Color.argb(alpha, grey, grey, grey));
+                bmOut.setPixel(x, y, Color.argb(alpha, grey, g, b));
             }
         }
 
@@ -58,7 +58,7 @@ public class FilterFebri extends Filter{
     public static Bitmap setFlagFilter(Bitmap bmp1, Bitmap bmp2) {
         Bitmap bmFilter = Bitmap.createBitmap(bmp1.getWidth(), bmp1.getHeight(), bmp1.getConfig());
         Paint paint = new Paint();
-        paint.setAlpha(200);
+        paint.setAlpha(300);
         Canvas canvas = new Canvas(bmFilter);
         canvas.drawBitmap(bmp1, new Matrix(), null);
         canvas.drawBitmap(bmp2, 0, 0, paint);
