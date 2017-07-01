@@ -1,20 +1,124 @@
 package com.filter.photo.photofilter;
 
 import android.graphics.Bitmap;
-import android.graphics.BlurMaskFilter;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-
-import java.io.File;
+import android.util.Log;
 
 /**
  * Created by sake on 23/06/17.
  */
 
-public class FilterMoti extends Filter{
+public class FilterMoti extends Filter {
+
+    public static final int CIRCLE_SHADOW_FRAME_FILTER = 3;
+    public static final int SINGLE_COLOR_FILTER_RED = 0;
+    public static final int SINGLE_COLOR_FILTER_GREEN = 1;
+    public static final int SINGLE_COLOR_FILTER_BLUE = 2;
+
+    private int code;
+
+    public FilterMoti(int code) {
+        this.code = code;
+    }
+
+    private Bitmap circleShadowFrame(Bitmap origin) {
+        int width = origin.getWidth();
+        int height = origin.getHeight();
+        Bitmap bmOut = Bitmap.createBitmap(width, height, origin.getConfig());
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                int pixel = origin.getPixel(x, y);
+                int alpha = Color.alpha(pixel);
+                int r = Color.red(pixel);
+                int g = Color.green(pixel);
+                int b = Color.blue(pixel);
+
+//                int[] filteredRGB = RoundingRGBFilter.translate(RoundingRGBFilter.f(r, g, b));
+//                int[] filteredRGB = DarkLightInstensifierFilter.f(r, g, b);
+//                int[] filteredRGB = BlueHighliterFilter.f(r, g, b);
+                int[] filteredRGB = CircleShadowFrame.f(r, g, b, x, y, width, height);
+                bmOut.setPixel(x, y, Color.argb(alpha, filteredRGB[0], filteredRGB[1], filteredRGB[2]));
+            }
+        }
+        return bmOut;
+    }
+
+    private Bitmap redHighliterFilter(Bitmap origin) {
+        int width = origin.getWidth();
+        int height = origin.getHeight();
+        Bitmap bmOut = Bitmap.createBitmap(width, height, origin.getConfig());
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                int pixel = origin.getPixel(x, y);
+                int alpha = Color.alpha(pixel);
+                int r = Color.red(pixel);
+                int g = Color.green(pixel);
+                int b = Color.blue(pixel);
+
+                int[] filteredRGB = RedHighliterFilter.f(r, g, b);
+                bmOut.setPixel(x, y, Color.argb(alpha, filteredRGB[0], filteredRGB[1], filteredRGB[2]));
+            }
+        }
+        return bmOut;
+    }
+
+    private Bitmap greenHighliterFilter(Bitmap origin) {
+        int width = origin.getWidth();
+        int height = origin.getHeight();
+        Bitmap bmOut = Bitmap.createBitmap(width, height, origin.getConfig());
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                int pixel = origin.getPixel(x, y);
+                int alpha = Color.alpha(pixel);
+                int r = Color.red(pixel);
+                int g = Color.green(pixel);
+                int b = Color.blue(pixel);
+
+                int[] filteredRGB = GreenHighliterFilter.f(r, g, b);
+                bmOut.setPixel(x, y, Color.argb(alpha, filteredRGB[0], filteredRGB[1], filteredRGB[2]));
+            }
+        }
+        return bmOut;
+    }
+
+    private Bitmap blueHighliterFilter(Bitmap origin) {
+        int width = origin.getWidth();
+        int height = origin.getHeight();
+        Bitmap bmOut = Bitmap.createBitmap(width, height, origin.getConfig());
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                int pixel = origin.getPixel(x, y);
+                int alpha = Color.alpha(pixel);
+                int r = Color.red(pixel);
+                int g = Color.green(pixel);
+                int b = Color.blue(pixel);
+
+                int[] filteredRGB = BlueHighliterFilter.f(r, g, b);
+                bmOut.setPixel(x, y, Color.argb(alpha, filteredRGB[0], filteredRGB[1], filteredRGB[2]));
+            }
+        }
+        return bmOut;
+    }
+
+    @Override
+    public Bitmap filter(Bitmap origin) {
+        if (code == CIRCLE_SHADOW_FRAME_FILTER) {
+            return circleShadowFrame(origin);
+        } else if(code == SINGLE_COLOR_FILTER_RED) {
+            return redHighliterFilter(origin);
+        } else if(code == SINGLE_COLOR_FILTER_GREEN) {
+            return greenHighliterFilter(origin);
+        } else {
+            return blueHighliterFilter(origin);
+        }
+    }
+}
+
+class ExtremeRGBFilter {
 
     private static final int RED = 1;
     private static final int GREEN = 2;
@@ -33,8 +137,8 @@ public class FilterMoti extends Filter{
     }
 
     private static int i1(int r, int g, int b) {
-        return Math.abs(r-g) <= RGB_TOLERANCE ? YELLOW :
-                (Math.abs(r-b) <= RGB_TOLERANCE ? PURPLE : TEAL);
+        return Math.abs(r - g) <= RGB_TOLERANCE ? YELLOW :
+                (Math.abs(r - b) <= RGB_TOLERANCE ? PURPLE : TEAL);
     }
 
     private static boolean h_cond(int r, int g, int b) {
@@ -48,63 +152,142 @@ public class FilterMoti extends Filter{
     }
 
     private static int g(int r, int g, int b) {
-        return r+g+b <= 255*3/2 ? BLACK : WHITE;
+        return r + g + b <= 255 * 3 / 2 ? BLACK : WHITE;
     }
 
     private static int t(int r, int g, int b) {
-        return Math.abs(r-g) + Math.abs(r-b) + Math.abs(b-g);
+        return Math.abs(r - g) + Math.abs(r - b) + Math.abs(b - g);
     }
 
-    private static int f(int r, int g, int b) {
+    public static int f(int r, int g, int b) {
         return t(r, g, b) <= BLACK_WHITE_TOLERANCE ? g(r, g, b) : h(r, g, b);
     }
 
-    private static int[] translate(int colorCode) {
-        if(colorCode == RED) {
-            return new int[] {255, 0, 0};
-        } else if(colorCode == GREEN) {
-            return new int[] {0, 255, 0};
-        } else if(colorCode == BLUE) {
-            return new int[] {0, 0, 255};
-        } else if(colorCode == YELLOW) {
-            return new int[] {255, 255, 0};
-        } else if(colorCode == PURPLE) {
-            return new int[] {255, 0, 255};
-        } else if(colorCode == TEAL) {
-            return new int[] {0, 255, 255};
-        } else if(colorCode == BLACK) {
-            return new int[] {0, 0, 0};
+    public static int[] translate(int colorCode) {
+        if (colorCode == RED) {
+            return new int[]{255, 0, 0};
+        } else if (colorCode == GREEN) {
+            return new int[]{0, 255, 0};
+        } else if (colorCode == BLUE) {
+            return new int[]{0, 0, 255};
+        } else if (colorCode == YELLOW) {
+            return new int[]{255, 255, 0};
+        } else if (colorCode == PURPLE) {
+            return new int[]{255, 0, 255};
+        } else if (colorCode == TEAL) {
+            return new int[]{0, 255, 255};
+        } else if (colorCode == BLACK) {
+            return new int[]{0, 0, 0};
         } else {
             ///colorCode == WHITE
-            return new int[] {255, 255, 255};
+            return new int[]{255, 255, 255};
         }
     }
+}
 
-    @Override
-    public Bitmap filter(Bitmap origin) {
-        int bitOffset = 64;
-        // get image size
-        int width = origin.getWidth();
-        int height = origin.getHeight();
-        // create output bitmap
-        Bitmap bmOut = Bitmap.createBitmap(width, height, origin.getConfig());
-        // color information
+class DarkLightInstensifierFilter {
+    private static final int TRESHOLD = 256*3/2;
+    private static final double ADD_PERCENTAGE = 1.2;
+    private static final double REDUCE_PERCENTAGE = 0.8;
 
-        // scan through all pixels
-        for(int x = 0; x < width; ++x) {
-            for(int y = 0; y < height; ++y) {
-                // get pixel color
-                int pixel = origin.getPixel(x, y);
-                int alpha = Color.alpha(pixel);
-                int r = Color.red(pixel);
-                int g = Color.green(pixel);
-                int b = Color.blue(pixel);
+    private static int g2(int c) {
+        return (int) Math.round(c*REDUCE_PERCENTAGE);
+    }
 
-                int[] filteredRGB = translate(f(r, g, b));
+    private static int g1(int c) {
+        return (int) Math.round(c*ADD_PERCENTAGE);
+    }
 
-                bmOut.setPixel(x, y, Color.argb(alpha, filteredRGB[0], filteredRGB[1], filteredRGB[2]));
-            }
-        }
-        return bmOut;
+    private static boolean f_cond(int r, int g, int b) {
+        return r+g+b < TRESHOLD;
+    }
+
+    public static int[] f(int r, int g, int b) {
+        return f_cond(r, g, b) ? new int[] {g1(r), g1(g), g1(b)} : new int[] {g2(r), g2(g), g2(b)};
+    }
+}
+
+class CircleShadowFrame {
+
+    private static double g(double z, int w, int h) {
+        return 1.7 - 0.7 * (z / (double) Math.min(w, h));
+    }
+
+    private static double fx(int x, int y, int w, int h) {
+        /// 2 * sqrt( | x - w/2 |^2 + | y - h/2 |^2 )
+        return 2 * Math.sqrt(Math.pow(Math.abs(x - (w/2)), 2) + Math.pow(Math.abs(y - (h/2)),2));
+    }
+
+    public static int[] f(int r, int g, int b, int x, int y, int w, int h) {
+        double t = g(fx(x, y, w, h), w, h);
+        return new int[] {Math.min((int) Math.round(r*t), 255),
+                Math.min((int) Math.round(g*t), 255),
+                Math.min((int) Math.round(b*t), 255)};
+    }
+}
+
+class RedHighliterFilter {
+
+    private static final double TRESHOLD = 1.4;
+    private static final double ADD_PERCENTAGE = 1.2;
+
+    private static int[] g2(int r, int g, int b) {
+        int gray = (r+g+b) / 3;
+        return new int[] {gray, gray, gray};
+    }
+
+    private static int[] g1(int r, int g, int b) {
+        return new int[] {r, g, b};
+    }
+
+    private static boolean f_cond(int r, int g, int b) {
+        return r > (int) Math.round(g * TRESHOLD) && r > (int) Math.round(b * TRESHOLD);
+    }
+    public static int[] f(int r, int g, int b) {
+        return f_cond(r, g, b) ? g1(r, g, b) : g2(r, g, b);
+    }
+}
+
+class GreenHighliterFilter {
+
+    private static final double TRESHOLD = 1.4;
+    private static final double ADD_PERCENTAGE = 1.2;
+
+    private static int[] g2(int r, int g, int b) {
+        int gray = (r+g+b) / 3;
+        return new int[] {gray, gray, gray};
+    }
+
+    private static int[] g1(int r, int g, int b) {
+        return new int[] {r, g, b};
+    }
+
+    private static boolean f_cond(int r, int g, int b) {
+        return g > (int) Math.round(r * TRESHOLD) && g > (int) Math.round(b * TRESHOLD);
+    }
+    public static int[] f(int r, int g, int b) {
+        return f_cond(r, g, b) ? g1(r, g, b) : g2(r, g, b);
+    }
+}
+
+class BlueHighliterFilter {
+
+    private static final double TRESHOLD = 1.4;
+    private static final double ADD_PERCENTAGE = 1.2;
+
+    private static int[] g2(int r, int g, int b) {
+        int gray = (r+g+b) / 3;
+        return new int[] {gray, gray, gray};
+    }
+
+    private static int[] g1(int r, int g, int b) {
+        return new int[] {r, g, b};
+    }
+
+    private static boolean f_cond(int r, int g, int b) {
+        return b > (int) Math.round(r * TRESHOLD) && b > (int) Math.round(g * TRESHOLD);
+    }
+    public static int[] f(int r, int g, int b) {
+        return f_cond(r, g, b) ? g1(r, g, b) : g2(r, g, b);
     }
 }

@@ -1,6 +1,7 @@
 package com.filter.photo.photofilter;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -11,6 +12,7 @@ import android.os.AsyncTask;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.view.MotionEventCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -44,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Bitmap originalImage;
     private Bitmap tempFilteredImage;
+    private int lastUsedFilter;
 
     private boolean validate() {
         if(originalImage == null) {
@@ -58,41 +61,72 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.trigger_filter1)
-    public void filter1() { filterImage(new FilterFebri());
+    public void filter1() {
+        if(lastUsedFilter != R.id.trigger_filter1 && validate()) {
+            lastUsedFilter = R.id.trigger_filter2;
+            filterImage(new FilterFebri());
+        } else {
+            image.setImageBitmap(tempFilteredImage);
+        }
     }
 
     @OnClick(R.id.trigger_filter2)
     public void filter2() {
-        filterImage(new FilterMoti());
+        if(lastUsedFilter != R.id.trigger_filter2 && validate()) {
+            lastUsedFilter = R.id.trigger_filter2;
+            filterImage(new FilterMoti(FilterMoti.CIRCLE_SHADOW_FRAME_FILTER));
+        } else {
+            image.setImageBitmap(tempFilteredImage);
+        }
     }
 
     @OnClick(R.id.trigger_filter3)
     public void filter3() {
-        filterImage(new FilterRifqi());
+        if(lastUsedFilter != R.id.trigger_filter3 && validate()) {
+            lastUsedFilter = R.id.trigger_filter3;
+            filterImage(new FilterRifqi());
+        } else {
+            image.setImageBitmap(tempFilteredImage);
+        }
     }
 
-    private void filterImage(final Filter filter) {
-        final Bitmap[] filterResult = {null};
+    @OnClick(R.id.trigger_filter4)
+    public void filter4() {
         if(!validate()) {
             return;
         }
+        lastUsedFilter = R.id.trigger_filter4;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Color");
+        builder.setItems(new CharSequence[] {"Red", "Green", "Blue"}, new DialogInterface.OnClickListener() {
+
+            private static final int RED = 0;
+            private static final int GREEN = 1;
+            private static final int BLUE = 2;
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                filterImage(new FilterMoti(which));
+            }
+        });
+        builder.show();
+    }
+
+    private void filterImage(final Filter filter) {
         waitingBuffer.setVisibility(View.VISIBLE);
         image.setVisibility(View.GONE);
         new AsyncTask<Void, Void, Boolean>() {
             protected Boolean doInBackground(Void... params) {
-                filterResult[0] = filter.filter(originalImage);
+                tempFilteredImage = filter.filter(originalImage);
                 return null;
             }
             protected void onPostExecute(Boolean result) {
-                image.setImageBitmap(filterResult[0]);
+                image.setImageBitmap(tempFilteredImage);
                 waitingBuffer.setVisibility(View.GONE);
                 image.setVisibility(View.VISIBLE);
             }
         }.execute();
-    }
-
-    private void setTempImageNotify(Bitmap image) {
-        tempFilteredImage = image;
     }
 
     @OnClick(R.id.trigger_clear)
@@ -101,6 +135,10 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         image.setImageBitmap(originalImage);
+    }
+
+    private void setTempImageNotify(Bitmap image) {
+        tempFilteredImage = image;
     }
 
     @OnClick(R.id.trigger_upload)
@@ -122,25 +160,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         pickImageFromGallery();
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if(resultCode == RESULT_OK) {
-            if(requestCode == PICK_PICTURE) {
-                try {
-                    Uri imageUri = data.getData();
-                    InputStream imageStream = getContentResolver().openInputStream(imageUri);
-                    originalImage = BitmapFactory.decodeStream(imageStream);
-                    Log.d(TAG, "width: " + originalImage.getWidth() + ", height: " + originalImage.getHeight());
-                    image.setImageBitmap(originalImage);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                    Toast.makeText(MainActivity.this, "Fail to retrieve image data", Toast.LENGTH_LONG).show();
-                }
-            }
-        }
     }
 
     @OnClick(R.id.trigger_save)
@@ -205,6 +224,38 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(resultCode == RESULT_OK) {
+            if(requestCode == PICK_PICTURE) {
+                try {
+                    Uri imageUri = data.getData();
+                    InputStream imageStream = getContentResolver().openInputStream(imageUri);
+
+                    originalImage = scaleImage(BitmapFactory.decodeStream(imageStream), 720);
+
+                    Log.d(TAG, "width: " + originalImage.getWidth() + ", height: " + originalImage.getHeight());
+                    image.setImageBitmap(originalImage);
+                    lastUsedFilter = 0;
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                    Toast.makeText(MainActivity.this, "Fail to retrieve image data", Toast.LENGTH_LONG).show();
+                }
+            }
+        }
+    }
+
+    public Bitmap scaleImage(Bitmap realImage, float maxImageSize) {
+        float ratio = Math.min(
+                    maxImageSize / realImage.getWidth(),
+                    maxImageSize / realImage.getHeight());
+        int width = Math.round(ratio * realImage.getWidth());
+        int height = Math.round(ratio * realImage.getHeight());
+
+        return Bitmap.createScaledBitmap(realImage, width, height, true);
     }
 
     @Override
