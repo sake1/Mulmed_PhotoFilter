@@ -83,8 +83,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="10dp"
-            android:id="@+id/trigger_clear"
-            android:text="CLEAR"/>
+            android:id="@+id/trigger_filter4"
+            android:text="FILTER 4"/>
 
     </LinearLayout>
 
@@ -93,6 +93,14 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:layout_marginBottom="16dp">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:id="@+id/trigger_clear"
+            android:layout_marginEnd="26dp"
+            android:text="CLEAR"/>
 
         <Button
             android:layout_width="wrap_content"
