@@ -113,11 +113,11 @@ public class MainActivity extends AppCompatActivity {
             private static final int newYear = 2;
 
             @Override
-            public void onClick(DialogInterface dialog, int which) {
+            public void onClick(DialogInterface dialog, int choice) {
                 Bitmap frame;
-                if(which == valentines) {
+                if(choice == valentines) {
                     frame = BitmapFactory.decodeResource(getResources(),R.drawable.vlt);
-                } else if(which == christmas) {
+                } else if(choice == christmas) {
                     frame = BitmapFactory.decodeResource(getResources(),R.drawable.chs);
                 } else {
                     frame = BitmapFactory.decodeResource(getResources(),R.drawable.ny);
