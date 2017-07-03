@@ -11,7 +11,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.support.annotation.NonNull;
-import android.support.v4.view.MotionEventCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -24,10 +23,7 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Random;
 
 import butterknife.BindView;
@@ -104,12 +100,34 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.trigger_filter3)
     public void filter3() {
-        if(lastUsedFilter != R.id.trigger_filter3 && validate()) {
-            filterImage(new FilterRifqi());
-            lastUsedFilter = R.id.trigger_filter3;
-        } else {
-            image.setImageBitmap(tempFilteredImage);
+        if(!validate()) {
+            return;
         }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Frame");
+        builder.setItems(new CharSequence[] {"Valentines", "christmas", "New Year"}, new DialogInterface.OnClickListener() {
+
+            private static final int valentines = 0;
+            private static final int christmas = 1;
+            private static final int newYear = 2;
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Bitmap frame;
+                if(which == valentines) {
+                    frame = BitmapFactory.decodeResource(getResources(),R.drawable.vlt);
+                } else if(which == christmas) {
+                    frame = BitmapFactory.decodeResource(getResources(),R.drawable.chs);
+                } else {
+                    frame = BitmapFactory.decodeResource(getResources(),R.drawable.ny);
+                }
+
+                filterImage(new FilterRifqi(image, frame));
+                lastUsedFilter = R.id.trigger_filter3;
+            }
+        });
+        builder.show();
     }
 
     @OnClick(R.id.trigger_filter4)
@@ -201,13 +219,13 @@ public class MainActivity extends AppCompatActivity {
             if(permissions[0].equals(Manifest.permission.READ_EXTERNAL_STORAGE) && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 pickImageFromGallery();
             } else {
-                Toast.makeText(MainActivity.this, "Need storace access permission to pick an image", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, "Need storage access permission to pick an image", Toast.LENGTH_LONG).show();
             }
         } else if(requestCode == REQUEST_STORAGE_WRITE) {
             if(permissions[0].equals(Manifest.permission.WRITE_EXTERNAL_STORAGE) && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 saveImageToGallery();
             } else {
-                Toast.makeText(MainActivity.this, "Need storace access permission to save the image", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, "Need storage access permission to save the image", Toast.LENGTH_LONG).show();
             }
         }
     }
