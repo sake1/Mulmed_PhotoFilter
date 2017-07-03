@@ -34,9 +34,6 @@ public class FilterMoti extends Filter {
                 int g = Color.green(pixel);
                 int b = Color.blue(pixel);
 
-//                int[] filteredRGB = RoundingRGBFilter.translate(RoundingRGBFilter.f(r, g, b));
-//                int[] filteredRGB = DarkLightInstensifierFilter.f(r, g, b);
-//                int[] filteredRGB = BlueHighliterFilter.f(r, g, b);
                 int[] filteredRGB = CircleShadowFrame.f(r, g, b, x, y, width, height);
                 bmOut.setPixel(x, y, Color.argb(alpha, filteredRGB[0], filteredRGB[1], filteredRGB[2]));
             }
@@ -209,8 +206,11 @@ class DarkLightInstensifierFilter {
 
 class CircleShadowFrame {
 
-    private static double g(double z, int w, int h) {
-        return 1.7 - 0.7 * (z / (double) Math.min(w, h));
+    private static final double MAX_INTESIFIER = 1.7;
+    private static final double REDUCTION_PER_Z = 0.7;
+
+    private static double g(double r, double z) {
+        return MAX_INTESIFIER - REDUCTION_PER_Z * (r / z);
     }
 
     private static double fx(int x, int y, int w, int h) {
@@ -219,7 +219,8 @@ class CircleShadowFrame {
     }
 
     public static int[] f(int r, int g, int b, int x, int y, int w, int h) {
-        double t = g(fx(x, y, w, h), w, h);
+        double z = Math.min(w, h);
+        double t = g(fx(x, y, w, h), z);
         return new int[] {Math.min((int) Math.round(r*t), 255),
                 Math.min((int) Math.round(g*t), 255),
                 Math.min((int) Math.round(b*t), 255)};
@@ -228,8 +229,9 @@ class CircleShadowFrame {
 
 class RedHighliterFilter {
 
-    private static final double TRESHOLD = 1.4;
+    private static final double TRESHOLD = 1.7;
     private static final double ADD_PERCENTAGE = 1.2;
+    private static final int BLACK_WHITE_TOLERANCE = 30;
 
     private static int[] g2(int r, int g, int b) {
         int gray = (r+g+b) / 3;
@@ -241,7 +243,8 @@ class RedHighliterFilter {
     }
 
     private static boolean f_cond(int r, int g, int b) {
-        return r > (int) Math.round(g * TRESHOLD) && r > (int) Math.round(b * TRESHOLD);
+        return Math.max(g, b) * TRESHOLD < r
+                && Math.abs(r - g) + Math.abs(r - b) + Math.abs(b - g) >= BLACK_WHITE_TOLERANCE;
     }
     public static int[] f(int r, int g, int b) {
         return f_cond(r, g, b) ? g1(r, g, b) : g2(r, g, b);
@@ -250,8 +253,9 @@ class RedHighliterFilter {
 
 class GreenHighliterFilter {
 
-    private static final double TRESHOLD = 1.4;
+    private static final double TRESHOLD = 1.15;
     private static final double ADD_PERCENTAGE = 1.2;
+    private static final int BLACK_WHITE_TOLERANCE = 30;
 
     private static int[] g2(int r, int g, int b) {
         int gray = (r+g+b) / 3;
@@ -263,7 +267,8 @@ class GreenHighliterFilter {
     }
 
     private static boolean f_cond(int r, int g, int b) {
-        return g > (int) Math.round(r * TRESHOLD) && g > (int) Math.round(b * TRESHOLD);
+        return Math.max(r, b) * TRESHOLD < g
+                && Math.abs(r - g) + Math.abs(r - b) + Math.abs(b - g) >= BLACK_WHITE_TOLERANCE;
     }
     public static int[] f(int r, int g, int b) {
         return f_cond(r, g, b) ? g1(r, g, b) : g2(r, g, b);
@@ -272,8 +277,9 @@ class GreenHighliterFilter {
 
 class BlueHighliterFilter {
 
-    private static final double TRESHOLD = 1.4;
+    private static final double TRESHOLD = 1.3;
     private static final double ADD_PERCENTAGE = 1.2;
+    private static final int BLACK_WHITE_TOLERANCE = 30;
 
     private static int[] g2(int r, int g, int b) {
         int gray = (r+g+b) / 3;
@@ -285,7 +291,8 @@ class BlueHighliterFilter {
     }
 
     private static boolean f_cond(int r, int g, int b) {
-        return b > (int) Math.round(r * TRESHOLD) && b > (int) Math.round(g * TRESHOLD);
+        return r * TRESHOLD < b && g <= b
+                && Math.abs(r - g) + Math.abs(r - b) + Math.abs(b - g) >= BLACK_WHITE_TOLERANCE;
     }
     public static int[] f(int r, int g, int b) {
         return f_cond(r, g, b) ? g1(r, g, b) : g2(r, g, b);
